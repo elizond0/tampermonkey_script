@@ -24,6 +24,7 @@
 // ==/UserScript==
 
 (function() {
+  "use strict";
   // 0.1 公用变量
   let hostname = window.location.hostname;
   let hosthref = window.location.href;
@@ -92,6 +93,7 @@
   // 1.2 知乎免登录
   // 原理：未登录状态下，直接跳转到发现页
   let skipZhiHuLogin = {
+    // 从发现页点击登陆，也会通过sign页面登录
     include: [/www\.zhihu\.com\/sign(up|in).+(2F)$/],
     release: function() {
       location.href = "https://www.zhihu.com/explore";
@@ -103,4 +105,41 @@
     }
   };
   skipZhiHuLogin.init();
+  // *******************************************
+  // 1.2 去除网页黏贴的后缀
+  // 原理：创建div标签保存选中数据，然后存入到剪切板中
+  let clearClipBoardSuffix = {
+    include: [/www\.zhihu\.com/],
+    release: function(event) {
+      event.preventDefault();
+      var node = document.createElement("div");
+      // 将选中标签添加到自定义div中
+      node.appendChild(
+        window
+          .getSelection()
+          .getRangeAt(0)
+          .cloneContents()
+      );
+      var htmlData = node && node.innerHTML;
+      var textData = window.getSelection().getRangeAt(0);
+      // 将数据存入剪切板中
+      if (event.clipboardData) {
+        event.clipboardData.setData("text/html", htmlData);
+        event.clipboardData.setData("text/plain", textData);
+      } else if (window.clipboardData) {
+        return window.clipboardData.setData("text", textData);
+      }
+    },
+    init: function() {
+      let self = this;
+      for (let i in self.include) {
+        if (!!self.include[i].test(hosthref)) {
+          window.onload = function() {
+            document.addEventListener("copy", self.release.bind(self));
+          };
+        }
+      }
+    }
+  };
+  clearClipBoardSuffix.init();
 })();
