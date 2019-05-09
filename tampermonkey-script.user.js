@@ -54,7 +54,7 @@
   let unfreezeWebInteraction = {
     include: [/www\.360doc\.com/], //匹配的网站
     events: "contextmenu|selectstart|copy|paste", //匹配的事件
-    release: function() {
+    action: function() {
       // let elements = getElements(); //解除所有元素
       let self = this;
       let elements = [document.body];
@@ -76,42 +76,51 @@
     init: function() {
       for (let i in this.include) {
         if (!!this.include[i].test(hostname)) {
-          window.addEventListener("load", this.release.bind(this), true);
-          this.release();
+          window.addEventListener("load", this.action.bind(this), true);
+          this.action();
           break;
         }
       }
       // 定时检查，针对动态生成dom的网站
       // let timerInterval, timerOut;
       // timerInterval && clearInterval(timerInterval);
-      // timerInterval = setInterval(this.release.bind(this), 5 * 1000);
+      // timerInterval = setInterval(this.action.bind(this), 5 * 1000);
       // timerOut && clearTimeout(timerOut);
-      // timerOut = setTimeout(this.release.bind(this), 1500);
+      // timerOut = setTimeout(this.action.bind(this), 1500);
     }
   };
-  unfreezeWebInteraction.init();
+  try {
+    unfreezeWebInteraction.init();
+  } catch (error) {
+    console.log("unfreezeWebInteraction:", error);
+  }
+
   // *******************************************
-  // 1.2 知乎免登录
+  // 1.2 知乎免登录浏览
   // 原理：未登录状态下，直接跳转到发现页
   let skipZhiHuLogin = {
     // 从发现页点击登陆，也会通过sign页面登录
     include: [/www\.zhihu\.com\/sign(up|in).+(2F)$/],
-    release: function() {
+    action: function() {
       location.href = "https://www.zhihu.com/explore";
     },
     init: function() {
       if (!!this.include[0].test(hosthref)) {
-        this.release();
+        this.action();
       }
     }
   };
-  skipZhiHuLogin.init();
+  try {
+    skipZhiHuLogin.init();
+  } catch (error) {
+    console.log("skipZhiHuLogin:", error);
+  }
   // *******************************************
   // 1.3 去除网页黏贴的后缀
   // 原理：创建div标签保存选中数据，然后存入到剪切板中
   let clearClipBoardSuffix = {
     include: [/www\.zhihu\.com/],
-    release: function(event) {
+    action: function(event) {
       event.preventDefault();
       var node = document.createElement("div");
       // 将选中标签添加到自定义div中
@@ -136,24 +145,51 @@
       for (let i in self.include) {
         if (!!self.include[i].test(hosthref)) {
           window.onload = function() {
-            document.addEventListener("copy", self.release.bind(self));
+            document.addEventListener("copy", self.action.bind(self));
           };
         }
       }
     }
   };
-  clearClipBoardSuffix.init();
+  try {
+    clearClipBoardSuffix.init();
+  } catch (error) {
+    console.log("clearClipBoardSuffix:", error);
+  }
   // *******************************************
   // 1.4 默认不使用二维码登录
+  // 原理：找到登录框，重新赋值className
   let avoidQRCodeLogin = {
     include: [
       {
-        taobao: /login\.taobao\.com\/member\/login/,
-        from: "#content .module-quick",
-        to: "#content .module-static"
+        rule: /taobao\.com\/member\/login/,
+        elem: "#J_LoginBox",
+        target: "login-box no-longlogin module-static"
+      },
+      {
+        rule: /acfun\.cn\/login/,
+        elem: "#login",
+        target: "login-account"
       }
     ],
-    release: function() {},
-    init: function() {}
+    action: function(ruleObj) {
+      document.querySelector(ruleObj.elem).className = ruleObj.target;
+    },
+    init: function() {
+      let self = this;
+      for (let i in self.include) {
+        if (!!self.include[i].rule.test(hosthref)) {
+          window.onload = function() {
+            self.action(self.include[i]);
+          };
+          break;
+        }
+      }
+    }
   };
+  try {
+    avoidQRCodeLogin.init();
+  } catch (error) {
+    console.log("avoidQRCodeLogin:", error);
+  }
 })();
