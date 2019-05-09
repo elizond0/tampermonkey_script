@@ -77,6 +77,7 @@
       for (let i in this.include) {
         if (!!this.include[i].test(hostname)) {
           window.addEventListener("load", this.release.bind(this), true);
+          this.release();
           break;
         }
       }
@@ -106,7 +107,7 @@
   };
   skipZhiHuLogin.init();
   // *******************************************
-  // 1.2 去除网页黏贴的后缀
+  // 1.3 去除网页黏贴的后缀
   // 原理：创建div标签保存选中数据，然后存入到剪切板中
   let clearClipBoardSuffix = {
     include: [/www\.zhihu\.com/],
@@ -142,4 +143,17 @@
     }
   };
   clearClipBoardSuffix.init();
+  // *******************************************
+  // 1.4 默认不使用二维码登录
+  let avoidQRCodeLogin = {
+    include: [
+      {
+        taobao: /login\.taobao\.com\/member\/login/,
+        from: "#content .module-quick",
+        to: "#content .module-static"
+      }
+    ],
+    release: function() {},
+    init: function() {}
+  };
 })();
