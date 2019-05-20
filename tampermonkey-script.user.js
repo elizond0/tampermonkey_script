@@ -192,4 +192,68 @@
   } catch (error) {
     console.log("avoidQRCodeLogin:", error);
   }
+  // *******************************************
+  // 1.5 悬浮面板启用/关闭功能
+  // 原理：找到登录框，重新赋值className
+  let functionSwitchPanel = {
+    include: [/.*/],
+    action: function(ruleObj) {
+      document.querySelector(ruleObj.elem).className = ruleObj.target;
+    },
+    createDom: function() {
+      let html = `
+      <div id="switch_panel">
+        <div class="switch_panel_header"><a>展开 / 收起</a></div>
+        <ul class="switch_panel_body">
+          <li class="switch_panel_li"><label><input type="checkbox" />取消网页复制限制</label></li>
+          <li class="switch_panel_li"><label><input type="checkbox" />知乎免登录浏览</label></li>
+          <li class="switch_panel_li"><label><input type="checkbox" />去除网页黏贴的后缀</label></li>
+          <li class="switch_panel_li"><label><input type="checkbox" />默认不使用二维码登录</label></li>
+        </ul>
+      </div>
+      `;
+      let css = `
+      <style>
+        #switch_panel {
+          position: fixed;
+          right: 50px;
+          top: 50px;
+          padding: 5px 8px;
+          background-color: beige;
+          color: cadetblue;
+          user-select: none;
+          border: 1px solid gray;
+          border-radius: 8px;
+        }
+        #switch_panel .switch_panel_header {
+          text-align: center;
+          line-height: 30px;
+        }
+        #switch_panel .switch_panel_header a {
+          padding: 3px 5px;
+          cursor: pointer;
+        }
+        #switch_panel .switch_panel_body {
+          list-style: none;
+          padding: 0;
+          margin: 0
+        }
+        #switch_panel .switch_panel_li {
+          padding: 3px 0;
+        }
+      </style>
+      `;
+    },
+    init: function() {
+      let self = this;
+      for (let i in self.include) {
+        if (!!self.include[i].rule.test(hosthref)) {
+          window.onload = function() {
+            self.action(self.include[i]);
+          };
+          break;
+        }
+      }
+    }
+  };
 })();
