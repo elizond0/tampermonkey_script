@@ -194,13 +194,16 @@
   }
   // *******************************************
   // 1.5 悬浮面板启用/关闭功能
-  // 原理：找到登录框，重新赋值className
+  // 原理：插入功能面板，
+  // todo:将配置存入cookie/localStorage,将功能嵌入到面板之后执行
   let functionSwitchPanel = {
-    include: [/.*/],
+    // include: [/.*/],
+    include: [/localhost/, /127.0.0.1/],
     action: function(ruleObj) {
-      document.querySelector(ruleObj.elem).className = ruleObj.target;
+      document.body.innerHTML += this.createDomHtml();
+      document.head.innerHTML += this.createDomCss();
     },
-    createDom: function() {
+    createDomHtml: function() {
       let html = `
       <div id="switch_panel">
         <div class="switch_panel_header"><a>展开 / 收起</a></div>
@@ -212,6 +215,9 @@
         </ul>
       </div>
       `;
+      return html;
+    },
+    createDomCss: function() {
       let css = `
       <style>
         #switch_panel {
@@ -243,11 +249,13 @@
         }
       </style>
       `;
+      return css;
     },
     init: function() {
+      window.alert = function() {};
       let self = this;
       for (let i in self.include) {
-        if (!!self.include[i].rule.test(hosthref)) {
+        if (!!self.include[i].test(hosthref)) {
           window.onload = function() {
             self.action(self.include[i]);
           };
@@ -256,4 +264,9 @@
       }
     }
   };
+  try {
+    functionSwitchPanel.init();
+  } catch (error) {
+    console.log("functionSwitchPanel:", error);
+  }
 })();
