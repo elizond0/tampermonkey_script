@@ -49,7 +49,7 @@
     return ret;
   }
   // *******************************************
-  // 1.1 劫持网页复制限制
+  // 1.1 解除网页复制限制
   // 原理：清楚document.body下挂载的oncopy/onpaste等事件
   let unfreezeWebInteraction = {
     include: [/www\.360doc\.com/], //匹配的网站
@@ -89,11 +89,11 @@
       // timerOut = setTimeout(this.action.bind(this), 1500);
     }
   };
-  try {
-    unfreezeWebInteraction.init();
-  } catch (error) {
-    console.log("unfreezeWebInteraction:", error);
-  }
+  // try {
+  //   unfreezeWebInteraction.init();
+  // } catch (error) {
+  //   console.log("unfreezeWebInteraction:", error);
+  // }
 
   // *******************************************
   // 1.2 知乎免登录浏览
@@ -110,11 +110,11 @@
       }
     }
   };
-  try {
-    skipZhiHuLogin.init();
-  } catch (error) {
-    console.log("skipZhiHuLogin:", error);
-  }
+  // try {
+  //   skipZhiHuLogin.init();
+  // } catch (error) {
+  //   console.log("skipZhiHuLogin:", error);
+  // }
   // *******************************************
   // 1.3 去除网页黏贴的后缀
   // 原理：创建div标签保存选中数据，然后存入到剪切板中
@@ -151,11 +151,11 @@
       }
     }
   };
-  try {
-    clearClipBoardSuffix.init();
-  } catch (error) {
-    console.log("clearClipBoardSuffix:", error);
-  }
+  // try {
+  //   clearClipBoardSuffix.init();
+  // } catch (error) {
+  //   console.log("clearClipBoardSuffix:", error);
+  // }
   // *******************************************
   // 1.4 默认不使用二维码登录
   // 原理：找到登录框，重新赋值className
@@ -187,32 +187,60 @@
       }
     }
   };
-  try {
-    avoidQRCodeLogin.init();
-  } catch (error) {
-    console.log("avoidQRCodeLogin:", error);
-  }
+  // try {
+  //   avoidQRCodeLogin.init();
+  // } catch (error) {
+  //   console.log("avoidQRCodeLogin:", error);
+  // }
   // *******************************************
   // 1.5 悬浮面板启用/关闭功能
   // 原理：插入功能面板，
   // todo:将配置存入cookie/localStorage,将功能嵌入到面板之后执行
   let functionSwitchPanel = {
-    // include: [/.*/],
-    include: [/localhost/, /127.0.0.1/],
+    include: [/.*/],
+    // include: [/localhost/, /127.0.0.1/],
     action: function(ruleObj) {
-      document.body.innerHTML += this.createDomHtml();
+      // 持久化面板功能列表
+      let functionArray = [
+        "unfreezeWebInteraction",
+        "skipZhiHuLogin",
+        "clearClipBoardSuffix",
+        "avoidQRCodeLogin"
+      ];
+      // 插入css和html
       document.head.innerHTML += this.createDomCss();
+      document.body.innerHTML += this.createDomHtml();
+      // 绑定事件，读取配置信息
+      this.initListener();
+      let configArray = this.loadConfig();
+      // 根据配置信息启用插件功能
+      for (let i = 0; i < functionArray.length; i++) {
+        try {
+          if (configArray[i] === "true") {
+            // 可以使用new Function代替eval，实际上v8引擎已经做了优化，甚至性能优于new Function
+            // https://jsperf.com/eval-vs-new-function-constructor/3
+            // new Function(functionArray[i] + ".init()")();
+            eval(functionArray[i] + ".init()");
+          }
+        } catch (error) {
+          console.log("Error:", error);
+        }
+      }
     },
     createDomHtml: function() {
       let html = `
-      <div id="switch_panel">
-        <div class="switch_panel_header"><a>展开 / 收起</a></div>
+      <div id="switch_panel" class="hide">
+        <div class="switch_panel_header"><a class="list_toggle_btn">展开 / 收起</a></div>
         <ul class="switch_panel_body">
           <li class="switch_panel_li"><label><input type="checkbox" />取消网页复制限制</label></li>
           <li class="switch_panel_li"><label><input type="checkbox" />知乎免登录浏览</label></li>
           <li class="switch_panel_li"><label><input type="checkbox" />去除网页黏贴的后缀</label></li>
           <li class="switch_panel_li"><label><input type="checkbox" />默认不使用二维码登录</label></li>
         </ul>
+        <div class='switch_panel_footer'>
+          <a class="config_cancel">重置</a>
+          <a class="config_save">保存</a>
+        </div>
       </div>
       `;
       return html;
@@ -222,6 +250,7 @@
       <style>
         #switch_panel {
           position: fixed;
+          z-index: 999999;
           right: 50px;
           top: 50px;
           padding: 5px 8px;
@@ -231,25 +260,117 @@
           border: 1px solid gray;
           border-radius: 8px;
         }
+    
         #switch_panel .switch_panel_header {
           text-align: center;
           line-height: 30px;
         }
+    
         #switch_panel .switch_panel_header a {
           padding: 3px 5px;
           cursor: pointer;
+          color: inherit;
         }
+    
         #switch_panel .switch_panel_body {
           list-style: none;
           padding: 0;
           margin: 0
         }
+    
+        #switch_panel.hide .switch_panel_body {
+          display: none
+        }
+    
         #switch_panel .switch_panel_li {
           padding: 3px 0;
+          font-size: 14px;
+        }
+    
+        #switch_panel .switch_panel_li input {
+          margin-right: 5px;
+        }
+    
+        #switch_panel .switch_panel_footer {
+          text-align: center;
+          font-size: 14px;
+          padding-top: 5px;
+          line-height: 30px;
+        }
+    
+        #switch_panel.hide .switch_panel_footer {
+          display: none;
+        }
+    
+        #switch_panel .switch_panel_footer a {
+          color: rgb(194, 91, 163);
+          border-radius: 5px;
+          border: 1px solid #727272;
+          padding: 2px 5px;
+          cursor: pointer;
         }
       </style>
       `;
       return css;
+    },
+    initListener: function() {
+      let _self = this;
+      document.body
+        .querySelectorAll("#switch_panel .list_toggle_btn")[0]
+        .addEventListener("click", function(event) {
+          // 切换列表显示
+          let list = this.parentNode.parentNode;
+          if (list.className.indexOf("hide") > -1) {
+            list.className = list.className.replace("hide", "");
+          } else {
+            list.className += "hide";
+          }
+        });
+      document.body
+        .querySelectorAll("#switch_panel .config_cancel")[0]
+        .addEventListener("click", function(event) {
+          // 重置checkbox
+          let list = this.parentNode.parentNode.querySelectorAll(
+            ".switch_panel_body"
+          )[0].children;
+          let result = _self.stringifyConfig(list, "reset");
+        });
+      document.body
+        .querySelectorAll("#switch_panel .config_save")[0]
+        .addEventListener("click", function(event) {
+          // 保存配置数据
+          let list = this.parentNode.parentNode.querySelectorAll(
+            ".switch_panel_body"
+          )[0].children;
+          let result = _self.stringifyConfig(list);
+          localStorage.setItem("switch_panel", result);
+        });
+    },
+    loadConfig: function() {
+      // 读取配置信息
+      let localConfig = localStorage.getItem("switch_panel") || "";
+      let configArray = localConfig.split(",");
+      let list = document.body.querySelectorAll(".switch_panel_body")[0]
+        .children;
+      for (let i = 0; i < list.length; i++) {
+        list[i].querySelector("input").checked =
+          configArray[i] === "true" ? true : false;
+      }
+      return configArray;
+    },
+    stringifyConfig: function(list = [], type = "") {
+      // 格式化配置信息
+      let configArray = [];
+      let tmpString = "";
+      for (let i = 0; i < list.length; i++) {
+        if (type === "reset") {
+          list[i].querySelector("input").checked = false;
+        } else {
+          configArray[i] = !!list[i].querySelector("input").checked;
+        }
+      }
+      tmpString = configArray.join(",");
+      return tmpString;
     },
     init: function() {
       window.alert = function() {};

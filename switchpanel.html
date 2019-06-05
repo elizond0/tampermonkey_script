@@ -1,57 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+    <style>
+      #switch_panel {
+        position: fixed;
+        z-index: 999999;
+        right: 50px;
+        top: 50px;
+        padding: 5px 8px;
+        background-color: beige;
+        color: cadetblue;
+        user-select: none;
+        border: 1px solid gray;
+        border-radius: 8px;
+      }
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Document</title>
-  <style>
-    #switch_panel {
-      position: fixed;
-      right: 50px;
-      top: 50px;
-      padding: 5px 8px;
-      background-color: beige;
-      color: cadetblue;
-      user-select: none;
-      border: 1px solid gray;
-      border-radius: 8px;
-    }
+      #switch_panel .switch_panel_header {
+        text-align: center;
+        line-height: 30px;
+      }
 
-    #switch_panel .switch_panel_header {
-      text-align: center;
-      line-height: 30px;
-    }
+      #switch_panel .switch_panel_header a {
+        padding: 3px 5px;
+        cursor: pointer;
+        color: inherit;
+      }
 
-    #switch_panel .switch_panel_header a {
-      padding: 3px 5px;
-      cursor: pointer;
-    }
+      #switch_panel .switch_panel_body {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
 
-    #switch_panel .switch_panel_body {
-      list-style: none;
-      padding: 0;
-      margin: 0
-    }
+      #switch_panel.hide .switch_panel_body {
+        display: none;
+      }
 
-    #switch_panel .switch_panel_li {
-      padding: 3px 0;
-    }
-  </style>
-</head>
+      #switch_panel .switch_panel_li {
+        padding: 3px 0;
+        font-size: 14px;
+      }
 
-<body>
-  <div id="switch_panel">
-    <div class="switch_panel_header"><a>展开 / 收起</a></div>
-    <ul class="switch_panel_body">
-      <li class="switch_panel_li"><label><input type="checkbox" />取消网页复制限制</label></li>
-      <li class="switch_panel_li"><label><input type="checkbox" />知乎免登录浏览</label></li>
-      <li class="switch_panel_li"><label><input type="checkbox" />去除网页黏贴的后缀</label></li>
-      <li class="switch_panel_li"><label><input type="checkbox" />默认不使用二维码登录</label></li>
-    </ul>
-  </div>
+      #switch_panel .switch_panel_li input {
+        margin-right: 5px;
+      }
 
-</body>
+      #switch_panel .switch_panel_footer {
+        text-align: center;
+        font-size: 14px;
+        padding-top: 5px;
+        line-height: 30px;
+      }
 
+      #switch_panel.hide .switch_panel_footer {
+        display: none;
+      }
+
+      #switch_panel .switch_panel_footer a {
+        color: rgb(194, 91, 163);
+        border-radius: 5px;
+        border: 1px solid #727272;
+        padding: 2px 5px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="switch_panel">
+      <div class="switch_panel_header">
+        <a class="list_toggle_btn">展开 / 收起</a>
+      </div>
+      <ul class="switch_panel_body">
+        <li class="switch_panel_li">
+          <label><input type="checkbox" />取消网页复制限制</label>
+        </li>
+        <li class="switch_panel_li">
+          <label><input type="checkbox" />知乎免登录浏览</label>
+        </li>
+        <li class="switch_panel_li">
+          <label><input type="checkbox" />去除网页黏贴的后缀</label>
+        </li>
+        <li class="switch_panel_li">
+          <label><input type="checkbox" />默认不使用二维码登录</label>
+        </li>
+      </ul>
+      <div class="switch_panel_footer">
+        <a class="config_cancel">重置</a>
+        <a class="config_save">保存</a>
+      </div>
+    </div>
+    <script>
+      "use strict";
+      (function() {
+        console.log(this);
+      })();
+      document.body
+        .querySelectorAll("#switch_panel .list_toggle_btn")[0]
+        .addEventListener("click", function(event) {
+          // 切换列表显示
+          let list = this.parentNode.parentNode;
+          if (list.className.indexOf("hide") > -1) {
+            list.className = list.className.replace(" hide", "");
+          } else {
+            list.className += " hide";
+          }
+        });
+      document.body
+        .querySelectorAll("#switch_panel .config_cancel")[0]
+        .addEventListener("click", function(event) {
+          // 重置checkbox
+          let list = this.parentNode.parentNode.querySelectorAll(
+            ".switch_panel_body"
+          )[0].children;
+          let result = stringifyConfig(list, "reset");
+        });
+      document.body
+        .querySelectorAll("#switch_panel .config_save")[0]
+        .addEventListener("click", function(event) {
+          // 保存配置数据
+          let list = this.parentNode.parentNode.querySelectorAll(
+            ".switch_panel_body"
+          )[0].children;
+          let result = stringifyConfig(list);
+          localStorage.setItem("switch_panel", result);
+        });
+
+      function stringifyConfig(list = [], type = "") {
+        let configArray = [];
+        let tmpString = "";
+        for (let i = 0; i < list.length; i++) {
+          if (type === "reset") {
+            list[i].querySelector("input").checked = false;
+          } else {
+            configArray[i] = !!list[i].querySelector("input").checked;
+          }
+        }
+        tmpString = configArray.join(",");
+        return tmpString;
+      }
+
+      function loadConfig() {
+        let localConfig = localStorage.getItem("switch_panel") || "";
+        let list = document.body.querySelectorAll(".switch_panel_body")[0]
+          .children;
+        for (let i = 0; i < list.length; i++) {
+          list[i].querySelector("input").checked =
+            localConfig.split(",")[i] === "true" ? true : false;
+        }
+      }
+      loadConfig();
+    </script>
+  </body>
 </html>
